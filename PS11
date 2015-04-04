@@ -1,0 +1,219 @@
+; Problem Set 11
+; Alex Agudelo
+
+;********************************************************************
+; Exercise 322
+
+(define-struct employee [name socialSecurity payRate])
+; (make-employee String Number Number)
+; name is a String
+; Interpretation: name of the employee
+; socialSecurity is a Number
+; Interpretation: socialSecurity number of the employee
+; payRate is a number
+; Interpretation: weekly pay rate of the employee
+
+#;(define (employee-tmpl a-E)
+    ... (employee-name a-E) ...
+    ... (employee-socialSecurity a-E) ...
+    ... (employee-payRate a-E) ...)
+
+(define-struct pay [name weeklyPay])
+; (make-pay String Number)
+; Name is a string
+; Interpretation: name of employee
+; WeeklyRate is a number
+; Interpretation: the weekly pay of the employee
+
+#;(define (pay-tmpl a-pay)
+    ... (pay-name a-pay) ...
+    ... (pay-weeklyPay ...))
+
+(define-struct record [name numHours])
+; (make-record String Number)
+; Name is a string
+; Interpretation: name of employee
+; numHours is a number
+; Interpretation: number of hours worked that week
+
+#;(define (record-tmpl a-record)
+    ... (record-name a-record) ...
+    ... (record-numHours a-record) ...)
+
+; Number Number -> Number
+; computes the weekly wage from pay-rate and hours-worked
+(check-expect (weekly-wage 0 0) 0)
+(check-expect (weekly-wage 20 10) 200)
+(check-expect (weekly-wage 5 20) 100)
+(define (weekly-wage pay-rate hours-worked)
+  (* pay-rate hours-worked))
+
+
+; Purpose:
+; Calculates the weekly wage of each employee
+; by multiplying the number of hours worked
+; by the hourly rate;
+; [List-of Employee] [List-of Record] -> [List-of Pay]
+(define LoE1 (list (make-employee "John" 090884944 15)))
+(define LoE2 (list (make-employee "Mark" 020844484 20) 
+                   (make-employee "John" 090884944 15)))
+(define LoR1 (list (make-record "John" 45)))
+(define LoR2 (list (make-record "Mark" 40) (make-record "John" 45)))
+(check-expect (wages*.v2 empty empty) empty)
+(check-expect (wages*.v2 LoE1 LoR1) (list (make-pay "John" 675)))
+(check-expect (wages*.v2 LoE2 LoR2) (list (make-pay "Mark" 800)
+                                          (make-pay "John" 675)))
+(define (wages*.v2 LoE LoR)
+  (cond
+    [(empty? LoE) empty]
+    [else (cons (make-pay (employee-name (first LoE)) 
+                          (weekly-wage (record-numHours (first LoR)) 
+                                       (employee-payRate (first LoE))))
+                (wages*.v2 (rest LoE) (rest LoR)))]))
+
+; ************************************************************************
+; Exercise 323
+
+(define-struct phone-record [name record])
+; A PhoneRecord is (make-phone-record String String)
+; name is a string
+; Interpreation: name of the person
+; record is a string
+; Interpretation:
+; phone number of the given person
+
+#;(define (phone-record-tmpl a-rec)
+    ... (phone-record-name a-rec) ...
+    ... (phone-record-record a-rec) ...)
+
+; Purpose:
+; Takes in a list of phone numbers
+; and names and makes it into a structure
+; of phone records
+; [List-of String] [List-of String] -> PhoneRecord
+(define LoN1 (list "Alex" "Tom"))
+(define LoP1 (list "781" "656"))
+(define LoN2 (list "Linda" "Combine" "Maly"))
+(define LoP2 (list "123" "234" "345"))
+(check-expect (zip empty empty) empty)
+(check-expect (zip LoN1 LoP1) (list (make-phone-record "Alex" "781")
+                                    (make-phone-record "Tom" "656")))
+(check-expect (zip LoN2 LoP2) (list (make-phone-record "Linda" "123")
+                                    (make-phone-record "Combine" "234")
+                                    (make-phone-record "Maly" "345")))             
+
+(define (zip LoN LoP)
+  (cond
+    [(empty? LoN) empty]
+    [else 
+     (cons (make-phone-record (first LoN) (first LoP))
+           (zip (rest LoN) (rest LoP)))]))
+
+;***************************************************************************
+; Exercise 324
+
+
+(define-struct branch [left right])
+; A TOS is one of:
+; – Symbol
+; – (make-branch TOS TOS)
+ 
+; A Direction is one of:
+; – 'left
+; – 'right
+ 
+; A list of Directions is also called a path. 
+
+
+; Purpose:
+; Signals an error when it is given a symobl and a non-epmty path
+; otherwise it returns the symbol
+; TOS [List-of Direction] -> Symbol
+(define TOS1 (make-branch 'a 'b))
+(define LoD10 (list 'right))
+(define LoD11 (list 'right 'left))
+(define TOS2 (make-branch (make-branch 'a 'b) (make-branch 'c 'd)))
+(define LoD20 (list 'right 'left))
+(define LoD21 (list 'left 'right 'left))
+(define LoD22 (list 'left))
+(check-expect (tree-pick TOS1 LoD10) 'b)
+(check-error (tree-pick TOS1 LoD11)) 
+(check-expect (tree-pick TOS2 LoD20) 'c)
+(check-error (tree-pick TOS2 LoD21))
+(check-error (tree-pick TOS2 LoD22))
+
+(define (tree-pick TOS LoD)
+  (cond
+    [(symbol? TOS)
+     (cond
+       [(empty? LoD)
+        TOS]
+       [else
+        (error "Symbol with nonempty path")])]
+    [(empty? LoD)
+     (error "No more paths but not at a symbol")]
+    [(branch? TOS)
+     (cond
+       [(symbol=? 'right (first LoD))
+        (tree-pick (branch-right TOS) (rest LoD))]
+       [(symbol=? 'left (first LoD))
+        (tree-pick (branch-left TOS) (rest LoD))])]))
+
+;*****************************************************************************
+; Exercise 328
+
+; Purpose:
+; Consumes a list l and a natural number n. 
+; The result is l with the first n items removed
+; or just the empty list if l is too short
+; [List-of A] N[>=0] -> [List-of A]
+(define Lol1 (list 'a))
+(define Lol2 (list 'a 'b 'c 'd))
+(define Lol3 (list 'a 'b 'c 'd 'e 'f))
+(check-expect (drop empty 0) empty)
+(check-expect (drop empty 4) empty)
+(check-expect (drop Lol1 0) Lol1)
+(check-expect (drop Lol1 1) empty)
+(check-expect (drop Lol2 2) (list 'c 'd))
+(check-expect (drop Lol2 4) empty)
+(check-expect (drop Lol3 3) (list 'd 'e 'f))
+(define (drop Lol n)
+  (cond    
+    [(> n (length Lol)) empty]
+    [(> n 0)
+     (drop (rest Lol) (- n 1))]
+    [else
+     Lol]))
+
+
+; Purpose:
+; Consumes a list l and a natural number n.
+; Its result is the list of the first n items from l
+; or all of l if it is too short
+; [List-of A] N[>=0] -> [List-of A]
+(check-expect (take empty 0) empty)
+(check-expect (take Lol1 0) empty)
+(check-expect (take Lol1 1) '(a))
+(check-expect (take Lol2 2) '(a b))
+(check-expect (take Lol2 10) (list 'a 'b 'c 'd))
+(check-expect (take Lol3 4) '(a b c d))
+(define (take Lol n)
+  (cond
+    [(empty? Lol) empty]
+    [(> n (length Lol)) Lol]
+    [(= n 0) empty]
+    [else
+     (cons (first Lol)
+           (take (rest Lol) (- n 1)))]))
+
+;********************************************************************************
+; Exercise 330
+
+
+  
+  
+  
+  
+  
+  
+  
