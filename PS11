@@ -209,11 +209,176 @@
 ;********************************************************************************
 ; Exercise 330
 
+(define-struct employee1 [name ID pay])
+;(make-employee String Number Number)
+; name is a string
+; Interpretation: Name of the employee
+; ID is a Number
+; Interpretation: Employee Number
+; Pay is a Number
+; Interpretation: Pay rate
 
+#;(define (employee1-tmpl a-E)
+    ... (employee1-name a-E) ...
+    ... (employee1-ID a-E) ...
+    ... (employee1-pay a-E) ...)
+
+(define-struct punchCard [ID numHours])
+;(make-punchCard Number Number)
+; ID is a number
+; Interpretation: Employee Number
+; numHours is a number
+; Interpretation: Number of hours worked that week
+#;(define (punchCard-tmpl a-P)
+    ... (punchCard-ID a-P) ...
+    ... (punchCard-numHours a-P) ...)
+
+(define-struct wage [name weeklyWage])
+;(make-wageRecord String Number
+; name is a String
+; Interpretation: Name of the employee
+; weeklyWage is a Number:
+; Interpreation: weekly wage of the employee
+#;(define (wage-tmpl a-W)
+    ... (wage-name a-W) ...
+    ... (wage-weeklyWage a-W) ...)
+
+; Purpose: 
+; Consumes a list of employee records and list of punch-cards
+; produces a list of wage records. Produces error if it cannot
+; find an employee record for a punch-card record or visa-versa.
+; [List-of Employee] [List-of PunchCards] -> [List-of Wages]
+
+(define employee51 (make-employee1 "John" 10 5))
+(define employee52 (make-employee1 "Alex" 9 10))
+(define employee53 (make-employee1 "Charile" 8 8))
+(define LoE51 (list employee51))
+(define LoE52 (list employee53 employee52 employee51))
+(define punchCard1 (make-punchCard 10 40))
+(define punchCard2 (make-punchCard 9 38))
+(define punchCard3 (make-punchCard 8 20))
+(define punchCard4 (make-punchCard 7 34))
+(define LoP51 (list punchCard1))
+(define LoP511 (list punchCard2))
+(define LoP52 (list punchCard2 punchCard1 punchCard3))
+(define LoP3 (list punchCard4))
+(define wage1 (make-wage "John" 200))
+(define wage2 (make-wage "Alex" 380))
+(define wage3 (make-wage "Charile" 160))
+(define wage4 (make-wage "John" 400))
+(define LoW1 (list wage1))
+(define LoW2 (list wage3 wage2 wage1))
+
+(check-expect (wages*.v3 LoE51 LoP51) LoW1)
+(check-expect (wages*.v3 LoE52 LoP52) LoW2)
+(check-error (wages*.v3 LoE51 LoP511))
+(check-error (wages*.v3 LoE51 LoP52))
+(check-error (wages*.v3 LoE52 LoP51))
+(check-error (wages*.v3 LoE52 empty))
+(check-error (wages*.v3 LoE52 LoP3))
+(define (wages*.v3 LoE LoP)
+  (cond
+    [(and (empty? LoE) (empty? LoP)) empty]
+    [(empty? LoE) 
+     (error "There are no more employees but there are punch cards")]
+    [(empty? LoP) 
+     (error "There are no more punch cards, but there are still employees")]
+    [else
+     (local (; Find an associated punch card with a certain employee
+             ; Employee [List-of Punchcards] -> wageRecord
+             (define (findPunch emp a-LoP)
+               (cond
+                 [(empty? a-LoP) (error "No punch cards for that employee")]
+                 [(= (employee1-ID emp) (punchCard-ID (first a-LoP)))
+                  (make-wage (employee1-name emp) 
+                             (* (employee1-pay emp) 
+                                (punchCard-numHours (first a-LoP))))]
+                 [else
+                  (findPunch emp (rest a-LoP))]))
+             ; Gets rid of the punch card associated with the choicen employee
+             ; Employee [List-of PunchCards] -> [List-of PunchCards]
+             (define (removePunchCard emp a-LoP)
+               (filter (lambda (x) (if (= (employee1-ID emp) (punchCard-ID x))
+                                       false
+                                       true)) a-LoP)))
+       
+       (cons (findPunch (first LoE) LoP) 
+             (wages*.v3 (rest LoE) 
+                        (removePunchCard (first LoE) LoP))))]))
+
+
+;*******************************************************************************
+; Exercise 330
+
+
+; Purpose:
+; Function takes two arguments both lists of
+; 'a, 'c, 'g and 't. First list is called a pattern
+; The second one a search string. Function returns true
+; if the pattern is a identical to the initial part of the serach 
+; string otherwise false
+; [List-of Symbol] String -> Boolean
+(check-expect (DNAprefix '(a c g t) "acgtl") true)
+(check-expect (DNAprefix '(a c g t) "actgl") false)
+(check-expect (DNAprefix '(c c c c g g t t) "ccccggttlasdf") true)
+(check-expect (DNAprefix '(c c g) "") false)
+(define (DNAprefix LoS str)
+  (DNAprefixHelper LoS (explode str)))
+
+
+; Purpose:
+; Helper for function DNAprefix by 
+; taking the string converted as a list 
+; and then tests for the begining section.
+; [List-of Symbol] [List-of String] -> Boolean
+(check-expect (DNAprefixHelper '(c c g t) (list "c" "c" "g" "t")) true)
+(check-expect (DNAprefixHelper '(c c g t) (list "c" "g" "c" "t")) false)
+(define (DNAprefixHelper LoSm LoS)
+  (cond
+    [(empty? LoSm) true]
+    [(empty? LoS) false]
+    [(symbol=? (first LoSm) (string->symbol (first LoS)))
+     (DNAprefixHelper (rest LoSm) (rest LoS))]
+    [else false]))
   
+
+; Maybe is one of:
+;  - Symbol
+;  - false
   
-  
-  
+; Purpose:
+; Like DNAprefix but retunrs the first item in the search string
+; beyond the pattern.
+; if the list are identical and there is no DNA letter beyond the patter;
+; the function signals an error.
+; If the pattern does not match the beginning of the search string,
+; the function returns false
+; [List-of Symbol] String -> Maybe
+
+(check-expect (DNAdelta '(a c g t) "acgtl") "l")
+(check-expect (DNAdelta '(a c g t) "actgl") false)
+(check-expect (DNAdelta '(c c c c g g t t) "ccccggttlasdf") "l")
+(check-error (DNAdelta '(c c g) "ccg"))
+(define (DNAdelta LoS str)
+  (DNAdeltaHelper LoS (explode str)))
+
+
+; Purpose:
+; Helper function for DNAdelta
+; takes the string and converts it into
+; a list of characters
+; [List-of Symbol] [List-of String] -> Mabye
+(check-expect (DNAdeltaHelper '(c c g t) (list "c" "c" "g" "t" "l")) "l")
+(check-error (DNAdeltaHelper '(c c g t) (list "c" "c" "g" "t")))
+(check-expect (DNAdeltaHelper '(c c g t) (list "c" "g" "c" "t")) false)
+(define (DNAdeltaHelper LoSm LoS)
+  (cond
+    [(empty? LoS) (error "list are identical size")]
+    [(empty? LoSm) (first LoS)]
+    [(symbol=? (first LoSm) (string->symbol (first LoS)))
+     (DNAdeltaHelper (rest LoSm) (rest LoS))]
+    [else false]))
+   
   
   
   
