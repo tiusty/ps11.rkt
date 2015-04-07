@@ -425,16 +425,28 @@
      (number? SExp)
      (symbol? SExp)
      (string? SExp)))
+(check-expect (atom=? 1 1) true)
+(check-expect (atom=? 'a 'a) true)
+(check-expect (atom=? 'a "a") false)
+(define (atom=? atom1 atom2)
+  (cond
+    [(and (number? atom2) (number? atom1) (= atom1 atom2))
+     true]
+    [(and (symbol? atom2) (symbol? atom1) (symbol=? atom1 atom2))
+     true]
+    [(and (string? atom2) (string? atom1) (string=? atom1 atom2))
+     true]
+    [else false]))
 
 ; Purpose:
 ; Does two SExps contain the same atoms
 ; regardless of ordering?
 ; SExp SExp -> Boolean
 
-(check-expect (contains-same-atoms? '(1) '(1)) true)
-(check-expect (contains-same-atoms? '(1 2 3) '(3 2 1)) true)
-(check-expect (contains-same-atoms? '(1 2 3 () ("r" b)) '("r" 1 (2) 3 b)) true)
-(define (contains-same-atoms? SExp1 SExp2)
+;(check-expect (contains-same-atoms? '(1) '(1)) true)
+;(check-expect (contains-same-atoms? '(1 2 3) '(3 2 1)) true)
+;(check-expect (contains-same-atoms? '(1 2 3 () ("r" b)) '("r" 1 (2) 3 b)) true)
+#;(define (contains-same-atoms? SExp1 SExp2)
   (cond
     [(and (empty? SExp1) (empty? SExp2)) true]
     [(empty? SExp1) false]
@@ -477,5 +489,45 @@
                              (removedAccepted SExp111 (rest SExp222)))])))
             (and (inSecondSExp? (first SExp1) SExp2)
                  (contains-same-atoms? (rest SExp1) (removedAccepted (first SExp1) SExp2))))]))
+(check-expect (contains-same-atoms? '(1) '(1)) true)
+(check-expect (contains-same-atoms? '(1 2 3) '(3 2 1)) true)
+(check-expect (contains-same-atoms? '(1 2 3 () ("r" b)) '("r" 1 (2) 3 b)) true)
+(define (contains-same-atoms? SExp1 SExp2)
+  (local (; Is there an atom in the second s-expression
+          ; that is equal to the first one
+          ; Atom SExp -> Boolean
+          (define (inSecondSExp? atom1 SExp)
+            (cond
+              [(empty? SExp) false]
+              [(atom? SExp)
+               (atom=? atom1 SExp)]
+              [(list? SExp)
+               (or (inSecondSExp? atom1 (first SExp))
+                   (inSecondSExp? atom1 (rest SExp)))]))
+          (define (removeAccepted atom1 SExp)
+            (cond
+              [(empty? SExp) empty]
+              [(atom? SExp)
+               (rest SExp)]
+              [(list? SExp)
+               (cons (removeAccepted atom1 (first SExp))
+                     (removeAccepted atom1 (rest SExp)))])))
+    (cond
+      [(and (empty? SExp1) (empty? SExp2)) true]
+      [(empty? SExp1) false]
+      [(empty? SExp2) false]
+      [(and (atom? SExp1) (atom? SExp2)) 
+       (cond
+         [(atom=? SExp1 SExp2)
+          true]
+         [else false])]            
+       [(atom? SExp1)
+        (if (inSecondSExp? SExp1 SExp2)
+            true
+            false)]
+       [(atom? SExp2)
+        false]
+       [else 
+        (and (contains-same-atoms? (first SExp1) (first SExp2))
+            (contains-same-atoms? (rest SExp1) (rest SExp2)))])))
 
-    
