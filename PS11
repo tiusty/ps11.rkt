@@ -1,8 +1,433 @@
+; Problem Set 11
+; Alex Agudelo
+
+;********************************************************************
+; Exercise 322
+
+(define-struct employee [name socialSecurity payRate])
+; (make-employee String Number Number)
+; name is a String
+; Interpretation: name of the employee
+; socialSecurity is a Number
+; Interpretation: socialSecurity number of the employee
+; payRate is a number
+; Interpretation: weekly pay rate of the employee
+
+#;(define (employee-tmpl a-E)
+    ... (employee-name a-E) ...
+    ... (employee-socialSecurity a-E) ...
+    ... (employee-payRate a-E) ...)
+
+(define-struct pay [name weeklyPay])
+; (make-pay String Number)
+; Name is a string
+; Interpretation: name of employee
+; WeeklyRate is a number
+; Interpretation: the weekly pay of the employee
+
+#;(define (pay-tmpl a-pay)
+    ... (pay-name a-pay) ...
+    ... (pay-weeklyPay ...))
+
+(define-struct record [name numHours])
+; (make-record String Number)
+; Name is a string
+; Interpretation: name of employee
+; numHours is a number
+; Interpretation: number of hours worked that week
+
+#;(define (record-tmpl a-record)
+    ... (record-name a-record) ...
+    ... (record-numHours a-record) ...)
+
+; Number Number -> Number
+; computes the weekly wage from pay-rate and hours-worked
+(check-expect (weekly-wage 0 0) 0)
+(check-expect (weekly-wage 20 10) 200)
+(check-expect (weekly-wage 5 20) 100)
+(define (weekly-wage pay-rate hours-worked)
+  (* pay-rate hours-worked))
+
+
+; Purpose:
+; Calculates the weekly wage of each employee
+; by multiplying the number of hours worked
+; by the hourly rate;
+; [List-of Employee] [List-of Record] -> [List-of Pay]
+(define LoE1 (list (make-employee "John" 090884944 15)))
+(define LoE2 (list (make-employee "Mark" 020844484 20) 
+                   (make-employee "John" 090884944 15)))
+(define LoR1 (list (make-record "John" 45)))
+(define LoR2 (list (make-record "Mark" 40) (make-record "John" 45)))
+(check-expect (wages*.v2 empty empty) empty)
+(check-expect (wages*.v2 LoE1 LoR1) (list (make-pay "John" 675)))
+(check-expect (wages*.v2 LoE2 LoR2) (list (make-pay "Mark" 800)
+                                          (make-pay "John" 675)))
+(define (wages*.v2 LoE LoR)
+  (cond
+    [(empty? LoE) empty]
+    [else (cons (make-pay (employee-name (first LoE)) 
+                          (weekly-wage (record-numHours (first LoR)) 
+                                       (employee-payRate (first LoE))))
+                (wages*.v2 (rest LoE) (rest LoR)))]))
+
+; ************************************************************************
+; Exercise 323
+
+(define-struct phone-record [name record])
+; A PhoneRecord is (make-phone-record String String)
+; name is a string
+; Interpreation: name of the person
+; record is a string
+; Interpretation:
+; phone number of the given person
+
+#;(define (phone-record-tmpl a-rec)
+    ... (phone-record-name a-rec) ...
+    ... (phone-record-record a-rec) ...)
+
+; Purpose:
+; Takes in a list of phone numbers
+; and names and makes it into a structure
+; of phone records
+; [List-of String] [List-of String] -> PhoneRecord
+(define LoN1 (list "Alex" "Tom"))
+(define LoP1 (list "781" "656"))
+(define LoN2 (list "Linda" "Combine" "Maly"))
+(define LoP2 (list "123" "234" "345"))
+(check-expect (zip empty empty) empty)
+(check-expect (zip LoN1 LoP1) (list (make-phone-record "Alex" "781")
+                                    (make-phone-record "Tom" "656")))
+(check-expect (zip LoN2 LoP2) (list (make-phone-record "Linda" "123")
+                                    (make-phone-record "Combine" "234")
+                                    (make-phone-record "Maly" "345")))             
+
+(define (zip LoN LoP)
+  (cond
+    [(empty? LoN) empty]
+    [else 
+     (cons (make-phone-record (first LoN) (first LoP))
+           (zip (rest LoN) (rest LoP)))]))
+
+;***************************************************************************
+; Exercise 324
+
+
+(define-struct branch [left right])
+; A TOS is one of:
+; – Symbol
+; – (make-branch TOS TOS)
+ 
+; A Direction is one of:
+; – 'left
+; – 'right
+ 
+; A list of Directions is also called a path. 
+
+
+; Purpose:
+; Signals an error when it is given a symobl and a non-epmty path
+; otherwise it returns the symbol
+; TOS [List-of Direction] -> Symbol
+(define TOS1 (make-branch 'a 'b))
+(define LoD10 (list 'right))
+(define LoD11 (list 'right 'left))
+(define TOS2 (make-branch (make-branch 'a 'b) (make-branch 'c 'd)))
+(define LoD20 (list 'right 'left))
+(define LoD21 (list 'left 'right 'left))
+(define LoD22 (list 'left))
+(check-expect (tree-pick TOS1 LoD10) 'b)
+(check-error (tree-pick TOS1 LoD11)) 
+(check-expect (tree-pick TOS2 LoD20) 'c)
+(check-error (tree-pick TOS2 LoD21))
+(check-error (tree-pick TOS2 LoD22))
+
+(define (tree-pick TOS LoD)
+  (cond
+    [(symbol? TOS)
+     (cond
+       [(empty? LoD)
+        TOS]
+       [else
+        (error "Symbol with nonempty path")])]
+    [(empty? LoD)
+     (error "No more paths but not at a symbol")]
+    [(branch? TOS)
+     (cond
+       [(symbol=? 'right (first LoD))
+        (tree-pick (branch-right TOS) (rest LoD))]
+       [(symbol=? 'left (first LoD))
+        (tree-pick (branch-left TOS) (rest LoD))])]))
+
+;*****************************************************************************
+; Exercise 328
+
+; Purpose:
+; Consumes a list l and a natural number n. 
+; The result is l with the first n items removed
+; or just the empty list if l is too short
+; [List-of A] N[>=0] -> [List-of A]
+(define Lol1 (list 'a))
+(define Lol2 (list 'a 'b 'c 'd))
+(define Lol3 (list 'a 'b 'c 'd 'e 'f))
+(check-expect (drop empty 0) empty)
+(check-expect (drop empty 4) empty)
+(check-expect (drop Lol1 0) Lol1)
+(check-expect (drop Lol1 1) empty)
+(check-expect (drop Lol2 2) (list 'c 'd))
+(check-expect (drop Lol2 4) empty)
+(check-expect (drop Lol3 3) (list 'd 'e 'f))
+(define (drop Lol n)
+  (cond    
+    [(> n (length Lol)) empty]
+    [(> n 0)
+     (drop (rest Lol) (- n 1))]
+    [else
+     Lol]))
+
+
+; Purpose:
+; Consumes a list l and a natural number n.
+; Its result is the list of the first n items from l
+; or all of l if it is too short
+; [List-of A] N[>=0] -> [List-of A]
+(check-expect (take empty 0) empty)
+(check-expect (take Lol1 0) empty)
+(check-expect (take Lol1 1) '(a))
+(check-expect (take Lol2 2) '(a b))
+(check-expect (take Lol2 10) (list 'a 'b 'c 'd))
+(check-expect (take Lol3 4) '(a b c d))
+(define (take Lol n)
+  (cond
+    [(empty? Lol) empty]
+    [(> n (length Lol)) Lol]
+    [(= n 0) empty]
+    [else
+     (cons (first Lol)
+           (take (rest Lol) (- n 1)))]))
+
+;********************************************************************************
+; Exercise 330
+
+(define-struct employee1 [name ID pay])
+;(make-employee String Number Number)
+; name is a string
+; Interpretation: Name of the employee
+; ID is a Number
+; Interpretation: Employee Number
+; Pay is a Number
+; Interpretation: Pay rate
+
+#;(define (employee1-tmpl a-E)
+    ... (employee1-name a-E) ...
+    ... (employee1-ID a-E) ...
+    ... (employee1-pay a-E) ...)
+
+(define-struct punchCard [ID numHours])
+;(make-punchCard Number Number)
+; ID is a number
+; Interpretation: Employee Number
+; numHours is a number
+; Interpretation: Number of hours worked that week
+#;(define (punchCard-tmpl a-P)
+    ... (punchCard-ID a-P) ...
+    ... (punchCard-numHours a-P) ...)
+
+(define-struct wage [name weeklyWage])
+;(make-wageRecord String Number
+; name is a String
+; Interpretation: Name of the employee
+; weeklyWage is a Number:
+; Interpreation: weekly wage of the employee
+#;(define (wage-tmpl a-W)
+    ... (wage-name a-W) ...
+    ... (wage-weeklyWage a-W) ...)
+
+; Purpose: 
+; Consumes a list of employee records and list of punch-cards
+; produces a list of wage records. Produces error if it cannot
+; find an employee record for a punch-card record or visa-versa.
+; [List-of Employee] [List-of PunchCards] -> [List-of Wages]
+
+(define employee51 (make-employee1 "John" 10 5))
+(define employee52 (make-employee1 "Alex" 9 10))
+(define employee53 (make-employee1 "Charile" 8 8))
+(define LoE51 (list employee51))
+(define LoE52 (list employee53 employee52 employee51))
+(define punchCard1 (make-punchCard 10 40))
+(define punchCard2 (make-punchCard 9 38))
+(define punchCard3 (make-punchCard 8 20))
+(define punchCard4 (make-punchCard 7 34))
+(define LoP51 (list punchCard1))
+(define LoP511 (list punchCard2))
+(define LoP52 (list punchCard2 punchCard1 punchCard3))
+(define LoP3 (list punchCard4))
+(define wage1 (make-wage "John" 200))
+(define wage2 (make-wage "Alex" 380))
+(define wage3 (make-wage "Charile" 160))
+(define wage4 (make-wage "John" 400))
+(define LoW1 (list wage1))
+(define LoW2 (list wage3 wage2 wage1))
+
+(check-expect (wages*.v3 LoE51 LoP51) LoW1)
+(check-expect (wages*.v3 LoE52 LoP52) LoW2)
+(check-error (wages*.v3 LoE51 LoP511))
+(check-error (wages*.v3 LoE51 LoP52))
+(check-error (wages*.v3 LoE52 LoP51))
+(check-error (wages*.v3 LoE52 empty))
+(check-error (wages*.v3 LoE52 LoP3))
+(define (wages*.v3 LoE LoP)
+  (cond
+    [(and (empty? LoE) (empty? LoP)) empty]
+    [(empty? LoE) 
+     (error "There are no more employees but there are punch cards")]
+    [(empty? LoP) 
+     (error "There are no more punch cards, but there are still employees")]
+    [else
+     (local (; Find an associated punch card with a certain employee
+             ; Employee [List-of Punchcards] -> wageRecord
+             (define (findPunch emp a-LoP)
+               (cond
+                 [(empty? a-LoP) (error "No punch cards for that employee")]
+                 [(= (employee1-ID emp) (punchCard-ID (first a-LoP)))
+                  (make-wage (employee1-name emp) 
+                             (* (employee1-pay emp) 
+                                (punchCard-numHours (first a-LoP))))]
+                 [else
+                  (findPunch emp (rest a-LoP))]))
+             ; Gets rid of the punch card associated with the choicen employee
+             ; Employee [List-of PunchCards] -> [List-of PunchCards]
+             (define (removePunchCard emp a-LoP)
+               (filter (lambda (x) (if (= (employee1-ID emp) (punchCard-ID x))
+                                       false
+                                       true)) a-LoP)))
+       
+       (cons (findPunch (first LoE) LoP) 
+             (wages*.v3 (rest LoE) 
+                        (removePunchCard (first LoE) LoP))))]))
+
+
+;*******************************************************************************
+; Exercise 330
+
+
+; Purpose:
+; Function takes two arguments both lists of
+; 'a, 'c, 'g and 't. First list is called a pattern
+; The second one a search string. Function returns true
+; if the pattern is a identical to the initial part of the serach 
+; string otherwise false
+; [List-of Symbol] String -> Boolean
+(check-expect (DNAprefix '(a c g t) "acgtl") true)
+(check-expect (DNAprefix '(a c g t) "actgl") false)
+(check-expect (DNAprefix '(c c c c g g t t) "ccccggttlasdf") true)
+(check-expect (DNAprefix '(c c g) "") false)
+(define (DNAprefix LoS str)
+  (DNAprefixHelper LoS (explode str)))
+
+
+; Purpose:
+; Helper for function DNAprefix by 
+; taking the string converted as a list 
+; and then tests for the begining section.
+; [List-of Symbol] [List-of String] -> Boolean
+(check-expect (DNAprefixHelper '(c c g t) (list "c" "c" "g" "t")) true)
+(check-expect (DNAprefixHelper '(c c g t) (list "c" "g" "c" "t")) false)
+(define (DNAprefixHelper LoSm LoS)
+  (cond
+    [(empty? LoSm) true]
+    [(empty? LoS) false]
+    [(symbol=? (first LoSm) (string->symbol (first LoS)))
+     (DNAprefixHelper (rest LoSm) (rest LoS))]
+    [else false]))
+  
+
+; Maybe is one of:
+;  - Symbol
+;  - false
+  
+; Purpose:
+; Like DNAprefix but retunrs the first item in the search string
+; beyond the pattern.
+; if the list are identical and there is no DNA letter beyond the patter;
+; the function signals an error.
+; If the pattern does not match the beginning of the search string,
+; the function returns false
+; [List-of Symbol] String -> Maybe
+
+(check-expect (DNAdelta '(a c g t) "acgtl") "l")
+(check-expect (DNAdelta '(a c g t) "actgl") false)
+(check-expect (DNAdelta '(c c c c g g t t) "ccccggttlasdf") "l")
+(check-error (DNAdelta '(c c g) "ccg"))
+(define (DNAdelta LoS str)
+  (DNAdeltaHelper LoS (explode str)))
+
+
+; Purpose:
+; Helper function for DNAdelta
+; takes the string and converts it into
+; a list of characters
+; [List-of Symbol] [List-of String] -> Mabye
+(check-expect (DNAdeltaHelper '(c c g t) (list "c" "c" "g" "t" "l")) "l")
+(check-error (DNAdeltaHelper '(c c g t) (list "c" "c" "g" "t")))
+(check-expect (DNAdeltaHelper '(c c g t) (list "c" "g" "c" "t")) false)
+(define (DNAdeltaHelper LoSm LoS)
+  (cond
+    [(empty? LoS) (error "list are identical size")]
+    [(empty? LoSm) (first LoS)]
+    [(symbol=? (first LoSm) (string->symbol (first LoS)))
+     (DNAdeltaHelper (rest LoSm) (rest LoS))]
+    [else false]))
+   
+  
+;********************************************************************************
+; Problem 7
+
+
+;;; An Atom is one of:
+;;; - Number
+;;; - Symbol
+;;; - String
+;;;
+;;; An SExp is one of:
+;;; - Atom
+;;; - [List-of SExp]
+;;;
+;;; SL [List-of SExp] is one of:
+;;; - empty
+;;; - (cons SExp SL)
+
+#;(define (atom-tmpl a)
+    (cond
+      [(number? a) ...]
+      [(string? a) ...]
+      [(symbol? a) ...]))
+#;(define (sl-tmpl xs)
+    (cond
+      [(empty? xs) ...]
+      [(cons? xs) ... (first xs) ... (rest xs) ...]))
+
+#;(define (s-tmpl SExp1 SExp2)
+    (cond
+      [(and (atom? SExp1) (atom? SExp2)) ... (op ... (atom-tmpl SExp1) ... (atom-tmpl SExp2) ... )]
+      [(atom? SExp1) ... (op ... (atom-tmpl SExp1) ... (sl-tmpl SExp2) ...)]
+      [(atom? SExp2) ... (op ... (atom-tmpl SExp2) ... (sl-tmpl SExp1) ...)]
+      [else ... (op ... (sl-tmpl SExp1) ... (sl-tmpl SExp2) ...)]))
+; Purpose:
+; determines if the given SExp is an atom
+; SExp -> Boolean
+(check-expect (atom? 'a) true)
+(check-expect (atom? "a") true)
+(check-expect (atom? 4) true)
+(check-expect (atom? (list 4)) false)
 (define (atom? SExp)
     (or
      (number? SExp)
      (symbol? SExp)
      (string? SExp)))
+(check-expect (atom=? 1 1) true)
+(check-expect (atom=? 'a 'a) true)
+(check-expect (atom=? 'a "a") false)
 (define (atom=? atom1 atom2)
   (cond
     [(and (number? atom2) (number? atom1) (= atom1 atom2))
@@ -19,6 +444,10 @@
 ; SExp SExp -> Boolean
 
 ;(check-expect (contains-same-atoms? '(1) '(1)) true)
+;(check-expect (contains-same-atoms? '(1 2 3) '(3 2 1)) true)
+;(check-expect (contains-same-atoms? '(1 2 3 () ("r" b)) '("r" 1 (2) 3 b)) true)
+
+(check-expect (contains-same-atoms? '(1) '(1)) true)
 (check-expect (contains-same-atoms? '(1 3) '(3 1)) true)
 ;(check-expect (contains-same-atoms? '(1 2 3 () ("r" b)) '("r" 1 (2) 3 b)) true)
 (define (contains-same-atoms? SExp1 SExp2)
@@ -66,3 +495,5 @@
       [else 
        (and (contains-same-atoms? (first SExp1) SExp2)
             (contains-same-atoms? (rest SExp1) (removeAccepted (first SExp1) SExp2)))])))
+
+
