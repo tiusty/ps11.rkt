@@ -490,7 +490,7 @@
             (and (inSecondSExp? (first SExp1) SExp2)
                  (contains-same-atoms? (rest SExp1) (removedAccepted (first SExp1) SExp2))))]))
 (check-expect (contains-same-atoms? '(1) '(1)) true)
-(check-expect (contains-same-atoms? '(1 2 3) '(3 2 1)) true)
+(check-expect (contains-same-atoms? '(1 2 (2) 3) '(2 3 1 2)) true)
 (check-expect (contains-same-atoms? '(1 2 3 () ("r" b)) '("r" 1 (2) 3 b)) true)
 (define (contains-same-atoms? SExp1 SExp2)
   (local (; Is there an atom in the second s-expression
@@ -528,6 +528,6 @@
        [(atom? SExp2)
         false]
        [else 
-        (and (contains-same-atoms? (first SExp1) (first SExp2))
+        (or (contains-same-atoms? (first SExp1) (first SExp2))
             (contains-same-atoms? (rest SExp1) (rest SExp2)))])))
 
