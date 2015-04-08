@@ -443,52 +443,6 @@
 ; regardless of ordering?
 ; SExp SExp -> Boolean
 
-;(check-expect (contains-same-atoms? '(1) '(1)) true)
-;(check-expect (contains-same-atoms? '(1 2 3) '(3 2 1)) true)
-;(check-expect (contains-same-atoms? '(1 2 3 () ("r" b)) '("r" 1 (2) 3 b)) true)
-#;(define (contains-same-atoms? SExp1 SExp2)
-  (cond
-    [(and (empty? SExp1) (empty? SExp2)) true]
-    [(empty? SExp1) false]
-    [(empty? SExp2) false]
-    [else (local (; is the first atom in the SExp
-                  ; the in the second SExp
-                  ; SExp SExp -> Boolean
-                  (define (inSecondSExp? SExp11 SExp22)
-                    (cond
-                      [(empty? SExp22) false]
-                      [(atom? (first SExp22)) 
-                       (cond
-                         [(and (number? (first SExp22)) (number? SExp11) (= SExp11 (first SExp22)))
-                          true]
-                         [(and (symbol? (first SExp22)) (symbol? SExp11) (symbol=? SExp11 (first SExp22)))
-                          true]
-                         [(and (string? (first SExp22)) (string? SExp11) (string=? SExp11 (first SExp22)))
-                          true]
-                         [else 
-                          (inSecondSExp? SExp11 (rest SExp22))])]
-                      [(list? (first SExp22))
-                       (or (inSecondSExp? SExp11 (first SExp22))
-                           (inSecondSExp? SExp11 (rest SExp22)))]))
-                  ; take out the s-expression that is already used
-                  ; SExp SExp -> SExp
-                  (define (removedAccepted SExp111 SExp222)
-                    (cond
-                      [(empty? SExp222) empty]
-                      [(atom? (first SExp222)) 
-                       (cond
-                         [(and (number? (first SExp222)) (number? SExp111) (= SExp111 (first SExp222)))
-                          (rest SExp222)]
-                         [(and (symbol? (first SExp222)) (symbol? SExp111) (symbol=? SExp111 (first SExp222)))
-                          (rest SExp222)]
-                         [(and (string? (first SExp222)) (string? SExp111) (string=? SExp111 (first SExp222)))
-                          (rest SExp222)]
-                         [else  (cons (first SExp222) (removedAccepted SExp111 (rest SExp222)))])]
-                      [(list? (first SExp222))
-                       (cons (removedAccepted SExp111 (first SExp222))
-                             (removedAccepted SExp111 (rest SExp222)))])))
-            (and (inSecondSExp? (first SExp1) SExp2)
-                 (contains-same-atoms? (rest SExp1) (removedAccepted (first SExp1) SExp2))))]))
 (check-expect (contains-same-atoms? '(1) '(1)) true)
 (check-expect (contains-same-atoms? '(1 2 (2) 3) '(2 3 1 2)) true)
 (check-expect (contains-same-atoms? '(1 2 3 () ("r" b)) '("r" 1 (2) 3 b)) true)
